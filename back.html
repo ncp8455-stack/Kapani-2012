@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>• Kapani High School 2012</title>
+
+<style>
+:root{
+  --bg:#000;
+  --card:#0b1220;
+  --border:#1f2937;
+  --accent:#facc15;
+  --text:#fff;
+  --muted:#9ca3af;
+  --paid:#22c55e;
+  --unpaid:#ef4444;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:linear-gradient(135deg,#020617,#000);
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
+}
+.topbar{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+  padding:10px;
+}
+button{
+  background:#020617;
+  color:#fff;
+  border:1px solid var(--border);
+  padding:6px 14px;
+  cursor:pointer;
+  border-radius:6px;
+}
+button:hover{border-color:var(--accent)}
+.lock{color:var(--unpaid);font-weight:700}
+.unlock{color:var(--paid);font-weight:700}
+
+.wrap{
+  max-width:1000px;
+  margin:0 auto 40px;
+  padding:12px;
+}
+.header{
+  background:var(--card);
+  border-radius:16px;
+  padding:16px;
+  text-align:center;
+  box-shadow:0 0 30px rgba(0,0,0,.7);
+}
+.header h1{
+  margin:0;
+  color:var(--accent);
+  font-size:26px;
+  font-weight:900;
+}
+.header p{
+  margin:6px 0 0;
+  color:var(--muted);
+}
+.stats{
+  display:flex;
+  justify-content:space-around;
+  margin-top:12px;
+  font-weight:800;
+}
+.stats span{font-size:16px}
+
+.card{
+  margin-top:14px;
+  background:var(--card);
+  border-radius:16px;
+  padding:16px;
+  box-shadow:0 10px 40px rgba(0,0,0,.8);
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+}
+th,td{
+  border:1px solid var(--border);
+  padding:8px 10px;
+}
+th{
+  background:#020617;
+  color:var(--accent);
+  text-align:center;
+}
+td:nth-child(1),
+td:nth-child(4){
+  text-align:center;
+}
+.status{
+  cursor:pointer;
+  font-weight:900;
+}
+.paid{color:var(--paid)}
+.unpaid{color:var(--unpaid)}
+
+@media print{
+  body{background:#fff;color:#000}
+  .topbar{display:none}
+}
+</style>
+</head>
+
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <span id="state" class="lock">🔒 VIEW ONLY</span>
+  <button onclick="login()">Admin Login</button>
+  <button onclick="logout()">Logout</button>
+  <button onclick="window.print()">Print</button>
+</div>
+
+<div class="wrap">
+
+  <div class="header">
+    <h1>Get-together</h1>
+    <p>Kapani High School, Kapani • Batch 2012</p>
+
+    <div class="stats">
+      <span>✅ Paid: <span id="paidCount">0</span></span>
+      <span>❌ Pending: <span id="pendingCount">0</span></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <table id="sheet">
+      <tr>
+        <th>Sl</th>
+        <th>Name</th>
+        <th>Batch</th>
+        <th>Status</th>
+      </tr>
+    </table>
+  </div>
+
+</div>
+
+<script>
+/* ================= CONFIG ================= */
+const ADMIN_PASSWORD = "kapani2012"; // change password
+const KEY = "kapani2012_status";
+
+/* ================= DATA ================= */
+const names = [
+ "Abhilesh Behera","Satyabrata Behera","Rupananda Bhue","Prakash Sahu",
+ "Rajesh Jued","Bhisma Meher","Nimai Charan Padhan","Omkar Rana",
+ "Sashisagar Suna","Biswamitra Dharua","Hrudananda Dharua","Sushant Mallik",
+ "Bulu Kuar","Ghanashyam Dharua","Satyaban Dharua","Abhilash Mirdha",
+ "Jubraj Chhatria"
+];
+
+let isAdmin = false;
+let data = JSON.parse(localStorage.getItem(KEY)) || {};
+
+/* ================= INIT ================= */
+const table = document.getElementById("sheet");
+
+names.forEach((name,i)=>{
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${i+1}</td>
+    <td>${name}</td>
+    <td>2012</td>
+    <td class="status" onclick="toggle(${i})"></td>
+  `;
+  table.appendChild(tr);
+});
+
+render();
+
+/* ================= FUNCTIONS ================= */
+function login(){
+  const p = prompt("Enter Admin Password");
+  if(p === ADMIN_PASSWORD){
+    isAdmin = true;
+    state.textContent = "🔓 ADMIN MODE";
+    state.className = "unlock";
+    alert("Admin login successful");
+  }else{
+    alert("Wrong password");
+  }
+}
+
+function logout(){
+  isAdmin = false;
+  state.textContent = "🔒 VIEW ONLY";
+  state.className = "lock";
+}
+
+function toggle(i){
+  if(!isAdmin){
+    alert("Admin only");
+    return;
+  }
+  if(!data[i]) data[i] = "paid";
+  else if(data[i] === "paid") data[i] = "unpaid";
+  else delete data[i];
+
+  localStorage.setItem(KEY, JSON.stringify(data));
+  render();
+}
+
+function render(){
+  let paid=0, pending=0;
+  [...table.querySelectorAll(".status")].forEach((cell,i)=>{
+    cell.className = "status";
+    cell.textContent = "";
+    if(data[i]==="paid"){
+      cell.textContent="✔ PAID";
+      cell.classList.add("paid");
+      paid++;
+    }else{
+      pending++;
+    }
+  });
+  paidCount.textContent = paid;
+  pendingCount.textContent = pending;
+}
+</script>
+
+</body>
+</html>
